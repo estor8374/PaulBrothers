@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Paul Brothers · Business Suite</title>
+    <!-- jsPDF + html2canvas for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #f9fafc 0%, #eef2f6 100%);
+            min-height: 100vh;
+            padding: 16px 12px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .app-wrapper {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 32px;
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+            padding: 24px 20px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        @media (min-width: 768px) {
+            body { padding: 30px 20px; }
+            .app-wrapper { padding: 32px 30px; border-radius: 40px; }
+        }
+
+        /* Header */
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .brand h1 {
+            font-weight: 700;
+            font-size: 1.8rem;
+            color: #0a1e2f;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .brand h1 span {
+            background: #1e3a5f;
+            color: white;
+            font-size: 0.9rem;
+            padding: 4px 16px;
+            border-radius: 60px;
+        }
+        .tagline {
+            color: #4b5e77;
+            font-size: 0.9rem;
+            padding-left: 8px;
+            border-left: 4px solid #2d7a9b;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e2eaf3;
+            padding-bottom: 4px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 12px 18px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #4a6479;
+            border-radius: 40px 40px 0 0;
+            cursor: pointer;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active {
+            color: #1e3a5f;
+            border-bottom-color: #1e3a5f;
+            background: #f0f7ff;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: #ffffffdd;
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 20px 18px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.02);
+            border: 1px solid #ffffff;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .card-header h2 {
+            font-weight: 600;
+            font-size: 1.3rem;
+            color: #13294b;
+        }
+        .badge {
+            background: #d4e2f0;
+            color: #1a405d;
+            padding: 5px 14px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        button {
+            background: white;
+            border: 1px solid #cfdde9;
+            padding: 10px 16px;
+            border-radius: 40px;
+            font-weight: 500;
+            color: #1e3a5f;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+        }
+        button.primary {
+            background: #1e3a5f;
+            border-color: #1e3a5f;
+            color: white;
+        }
+        button.small { padding: 8px 14px; font-size: 0.8rem; }
+        button.danger { background: #fff0f0; border-color: #fcc; color: #b91c1c; }
+
+        /* Buyer list */
+        .buyer-list {
+            max-height: 350px;
+            overflow-y: auto;
+            margin: 8px 0 18px;
+            border-radius: 20px;
+            background: #fbfdff;
+        }
+        .buyer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #eef3f9;
+            cursor: pointer;
+        }
+        .buyer-item.selected {
+            background: #d9e9fa;
+            border-left: 5px solid #1e5b9e;
+        }
+        .buyer-info { font-weight: 600; }
+        .buyer-turnover {
+            background: #dff0f9;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 600;
+            color: #0b4b6b;
+        }
+
+        .add-buyer-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .add-buyer-form input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1.5px solid #dfe8f2;
+            border-radius: 40px;
+        }
+
+        /* Dashboard stats */
+        .stat-row {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        @media (min-width: 480px) {
+            .stat-row { flex-direction: row; }
+        }
+        .stat-card {
+            background: #f3f9ff;
+            border-radius: 22px;
+            padding: 16px 20px;
+            flex: 1;
+        }
+        .stat-label {
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            color: #51718c;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0a1e2f;
+        }
+
+        /* Invoice tool */
+        .input-group { margin-bottom: 18px; }
+        label { font-weight: 500; color: #2c445e; display: block; margin-bottom: 6px; }
+        select, input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #dfe8f2;
+            border-radius: 20px;
+            font-size: 1rem;
+            background: white;
+        }
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .input-row { grid-template-columns: 1fr 1fr; }
+        }
+        .items-panel {
+            background: #fafdff;
+            border-radius: 24px;
+            padding: 16px;
+            margin: 18px 0;
+        }
+        .item-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        @media (min-width: 600px) {
+            .item-row { grid-template-columns: 2fr 1fr 1.2fr 0.5fr; }
+        }
+        .invoice-total {
+            text-align: right;
+            font-size: 1.4rem;
+            font-weight: 700;
+            padding: 16px 0 8px;
+            border-top: 2px dashed #bdd3e8;
+        }
+        .invoice-log {
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .invoice-log-item {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 4px;
+            border-bottom: 1px solid #e2ebf3;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .footer-note {
+            margin-top: 28px;
+            color: #6b85a0;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #d9e2ec;
+            padding-top: 16px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #7a95b0;
+        }
+        .pdf-preview {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 210mm;
+            padding: 20mm;
+            background: white;
+            font-family: Arial, sans-serif;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #1e3a5f;
+            color: white;
+            border-radius: 8px;
+            transform: translateX(150%);
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+        .notification.show { transform: translateX(0); }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="app-wrapper">
+    <div class="brand">
+        <div>
+            <h1>📋 Paul Brothers <span>ALL-IN-ONE</span></h1>
+            <div class="tagline">Invoice · Buyer Ledger · Turnover · PDF Download</div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tabs-nav">
+        <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab-btn" data-tab="buyers">👥 Buyers</button>
+        <button class="tab-btn" data-tab="invoice">🧾 New Invoice</button>
+    </div>
+
+    <!-- Dashboard Panel -->
+    <div id="dashboardPanel" class="tab-panel active">
+        <div class="card">
+            <div class="card-header">
+                <h2>Turnover Overview</h2>
+                <span class="badge" id="overallInvoiceCount">0 invoices</span>
+            </div>
+            <div class="stat-row">
+                <div class="stat-card">
+                    <div class="stat-label">Total turnover</div>
+                    <div class="stat-value" id="totalTurnover">₹0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Selected buyer</div>
+                    <div class="stat-value" id="selectedBuyerTurnover">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h2>Recent Invoices</h2>
+                <button id="toggleInvoiceLogBtn" class="small">▼ Show</button>
+            </div>
+            <div id="recentInvoicesPanel">
+                <div class="invoice-log" id="invoiceLog">
+                    <div class="empty-state">No invoices yet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buyers Panel -->
+    <div id="buyersPanel" class="tab-panel">
+        <div class="card">
+            <div class="card-header">
+                <h2>Buyer Directory</h2>
+                <span class="badge" id="buyerCount">0</span>
+            </div>
+            <div class="buyer-list" id="buyerListContainer">
+                <div class="empty-state">➕ Add your first buyer</div>
+            </div>
+            <div class="add-buyer-form">
+                <input type="text" id="newBuyerName" placeholder="Buyer / company name">
+                <button id="addBuyerBtn" class="primary">➕ Add</button>
+            </div>
+            <div style="margin-top: 20px;">
+                <button id="clearSelectedBuyerBtn" class="small" style="width:100%;">🗂️ Clear selection</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Panel (Simplified: buyer selection only) -->
+    <div id="invoicePanel" class="tab-panel">
+        <div class="card">
+            <div class="card-header">
+                <h2>Create New Invoice</h2>
+            </div>
+
+            <!-- Buyer Selection (no manual typing) -->
+            <div class="input-group">
+                <label>Select Buyer</label>
+                <select id="invoiceBuyerSelect">
+                    <option value="">-- Choose a buyer --</option>
+                </select>
+                <p style="font-size:0.8rem; margin-top:5px; color:#4d708b;">Customer name will be taken from selected buyer</p>
+            </div>
+
+            <!-- Product Section -->
+            <h3 style="margin: 20px 0 10px; color: #1e3a5f;">Add Products</h3>
+            <div class="input-row">
+                <div class="input-group"><label>Product Name</label><input type="text" id="productName" placeholder="Item description"></div>
+                <div class="input-group"><label>Quantity</label><input type="number" id="quantity" min="1" value="1"></div>
+            </div>
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Price</label>
+                    <div style="display: flex; gap: 8px;">
+                        <select id="currency" style="width: 80px;"><option value="₹">₹</option><option value="$">$</option></select>
+                        <input type="number" id="price" min="0" step="0.01" style="flex:1;">
+                    </div>
+                </div>
+                <div class="input-group"><label>Delivery Date</label><input type="date" id="deliveryDate"></div>
+            </div>
+            <button id="addProductBtn" class="primary" style="width:100%; margin: 10px 0;">➕ Add to Bill</button>
+
+            <!-- Discount & Tax -->
+            <div style="display: flex; gap: 15px; margin: 15px 0;">
+                <div style="flex:1;"><label>Discount (₹)</label><input type="number" id="discountAmount" placeholder="0" step="0.01"></div>
+                <div style="flex:1;"><label>Tax (%)</label><input type="number" id="taxRate" placeholder="0" step="0.01" value="0"></div>
+            </div>
+
+            <!-- Bill Summary -->
+            <div class="items-panel">
+                <h4>Bill Summary</h4>
+                <div id="billItemsContainer"></div>
+                <div class="invoice-total">Total: <span id="grandTotalDisplay">₹0.00</span></div>
+            </div>
+
+            <div class="actions">
+                <button id="saveInvoiceBtn" class="primary">💾 Save Invoice</button>
+                <button id="downloadPDFBtn" class="danger">📄 Download PDF</button>
+                <button id="clearBillBtn">Clear Bill</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        <span>Paul Brothers · Data stored locally</span>
+        <span>⚡ v5.0 · Select buyer, no typing</span>
+    </div>
+</div>
+
+<!-- Hidden PDF Template -->
+<div id="pdfPreview" class="pdf-preview">
+    <div style="text-align:center; border-bottom:2px solid #1a237e; padding-bottom:15px;">
+        <h1 style="color:#1a237e;">Paul Brothers</h1>
+        <p>Quality Products, Trusted Service</p>
+        <h2>INVOICE</h2>
+    </div>
+    <div style="display:flex; justify-content:space-between; margin:20px 0;">
+        <div><strong>Bill To:</strong><br><span id="pdfCustName"></span></div>
+        <div><strong>Date:</strong> <span id="pdfDate"></span><br><strong>Invoice #:</strong> PB<span id="pdfInvNo"></span></div>
+    </div>
+    <table style="width:100%; border-collapse:collapse;" id="pdfItemsTable"></table>
+    <div style="text-align:right; margin-top:20px; font-size:1.5rem;"><strong>Total: <span id="pdfTotal"></span></strong></div>
+</div>
+
+<div class="notification" id="notification">Notification</div>
+
+<script>
+    (function(){
+        "use strict";
+        const { jsPDF } = window.jspdf;
+
+        // ---------- STORAGE ----------
+        const STORAGE_BUYERS = 'pb_buyers_v5';
+        const STORAGE_INVOICES = 'pb_invoices_v5';
+
+        let buyers = [];
+        let invoices = [];
+        let selectedBuyerId = null;
+        let currentBillItems = [];
+        let currencySymbol = '₹';
+
+        // DOM elements
+        const tabs = document.querySelectorAll('.tab-btn');
+        const panels = {
+            dashboard: document.getElementById('dashboardPanel'),
+            buyers: document.getElementById('buyersPanel'),
+            invoice: document.getElementById('invoicePanel')
+        };
+        const buyerListDiv = document.getElementById('buyerListContainer');
+        const buyerCountSpan = document.getElementById('buyerCount');
+        const newBuyerNameInput = document.getElementById('newBuyerName');
+        const addBuyerBtn = document.getElementById('addBuyerBtn');
+        const clearSelectedBtn = document.getElementById('clearSelectedBuyerBtn');
+        const totalTurnoverSpan = document.getElementById('totalTurnover');
+        const selectedBuyerTurnoverSpan = document.getElementById('selectedBuyerTurnover');
+        const overallInvoiceCountSpan = document.getElementById('overallInvoiceCount');
+        const invoiceLogDiv = document.getElementById('invoiceLog');
+        const toggleInvoiceLogBtn = document.getElementById('toggleInvoiceLogBtn');
+        const recentPanel = document.getElementById('recentInvoicesPanel');
+        const invoiceBuyerSelect = document.getElementById('invoiceBuyerSelect');
+
+        // Invoice form fields
+        const productName = document.getElementById('productName');
+        const quantity = document.getElementById('quantity');
+        const price = document.getElementById('price');
+        const currencySelect = document.getElementById('currency');
+        const deliveryDate = document.getElementById('deliveryDate');
+        const addProductBtn = document.getElementById('addProductBtn');
+        const billItemsContainer = document.getElementById('billItemsContainer');
+        const grandTotalDisplay = document.getElementById('grandTotalDisplay');
+        const discountAmountInput = document.getElementById('discountAmount');
+        const taxRateInput = document.getElementById('taxRate');
+        const saveInvoiceBtn = document.getElementById('saveInvoiceBtn');
+        const downloadPDFBtn = document.getElementById('downloadPDFBtn');
+        const clearBillBtn = document.getElementById('clearBillBtn');
+        const notification = document.getElementById('notification');
+
+        // PDF elements
+        const pdfCustName = document.getElementById('pdfCustName');
+        const pdfDate = document.getElementById('pdfDate');
+        const pdfInvNo = document.getElementById('pdfInvNo');
+        const pdfItemsTable = document.getElementById('pdfItemsTable');
+        const pdfTotal = document.getElementById('pdfTotal');
+
+        // ---------- Helper functions ----------
+        function generateId() { return Date.now() + '-' + Math.random().toString(36).substr(2,9); }
+        function formatCurrency(amt) { return currencySymbol + ' ' + amt.toLocaleString('en-IN', {minimumFractionDigits:2}); }
+        function showNotification(msg, isError=false) {
+            notification.textContent = msg;
+            notification.style.background = isError ? '#b91c1c' : '#1e3a5f';
+            notification.classList.add('show');
+            setTimeout(() => notification.classList.remove('show'), 3000);
+        }
+
+        // Tab switching
+        function switchTab(tabId) {
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            Object.values(panels).forEach(p => p.classList.remove('active'));
+            panels[tabId].classList.add('active');
+            if (tabId === 'dashboard') updateDashboard();
+            if (tabId === 'buyers') renderBuyerList();
+            if (tabId === 'invoice') populateBuyerDropdown();
+        }
+        tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+        // ---------- Data management ----------
+        function loadData() {
+            buyers = JSON.parse(localStorage.getItem(STORAGE_BUYERS)) || [];
+            invoices = JSON.parse(localStorage.getItem(STORAGE_INVOICES)) || [];
+            buyers.forEach(b => b.totalTurnover = invoices.filter(inv => inv.buyerId === b.id).reduce((s,i) => s + i.total, 0));
+        }
+        function saveData() {
+            localStorage.setItem(STORAGE_BUYERS, JSON.stringify(buyers));
+            localStorage.setItem(STORAGE_INVOICES, JSON.stringify(invoices));
+        }
+
+        // ---------- Buyers ----------
+        function renderBuyerList() {
+            if (!buyers.length) {
+                buyerListDiv.innerHTML = '<div class="empty-state">➕ Add your first buyer</div>';
+                buyerCountSpan.textContent = '0';
+            } else {
+                let html = '';
+                buyers.forEach(b => {
+                    html += `<div class="buyer-item ${selectedBuyerId===b.id?'selected':''}" data-id="${b.id}">
+                        <span class="buyer-info">🏢 ${b.name}</span>
+                        <span class="buyer-turnover">${formatCurrency(b.totalTurnover||0)}</span>
+                    </div>`;
+                });
+                buyerListDiv.innerHTML = html;
+                buyerCountSpan.textContent = buyers.length;
+                document.querySelectorAll('.buyer-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        selectedBuyerId = el.dataset.id;
+                        renderBuyerList();
+                        updateDashboard();
+                        populateBuyerDropdown();
+                    });
+                });
+            }
+            populateBuyerDropdown();
+        }
+        function populateBuyerDropdown() {
+            invoiceBuyerSelect.innerHTML = '<option value="">-- Choose a buyer --</option>';
+            buyers.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.id;
+                opt.textContent = b.name;
+                if (selectedBuyerId === b.id) opt.selected = true;
+                invoiceBuyerSelect.appendChild(opt);
+            });
+        }
+        function addBuyer() {
+            const name = newBuyerNameInput.value.trim();
+            if (!name) return showNotification('Enter buyer name', true);
+            buyers.push({ id: generateId(), name, totalTurnover: 0 });
+            saveData();
+            renderBuyerList();
+            newBuyerNameInput.value = '';
+            showNotification('Buyer added');
+        }
+        function clearSelected() {
+            selectedBuyerId = null;
+            renderBuyerList();
+            updateDashboard();
+        }
+
+        // ---------- Dashboard ----------
+        function updateDashboard() {
+            const total = invoices.reduce((s,i) => s + i.total, 0);
+            totalTurnoverSpan.textContent = formatCurrency(total);
+            overallInvoiceCountSpan.textContent = `${invoices.length} invoice${invoices.length!==1?'s':''}`;
+            if (selectedBuyerId) {
+                const b = buyers.find(x => x.id === selectedBuyerId);
+                selectedBuyerTurnoverSpan.textContent = b ? formatCurrency(b.totalTurnover) : '—';
+            } else {
+                selectedBuyerTurnoverSpan.textContent = '—';
+            }
+            renderInvoiceLog();
+        }
+        function renderInvoiceLog() {
+            if (!invoices.length) {
+                invoiceLogDiv.innerHTML = '<div class="empty-state">No invoices yet</div>';
+                return;
+            }
+            const sorted = [...invoices].sort((a,b) => (a.date < b.date ? 1 : -1));
+            let html = '';
+            sorted.slice(0,10).forEach(inv => {
+                html += `<div class="invoice-log-item">
+                    <div><strong>${inv.invoiceNumber}</strong> · ${inv.buyerName} · ${inv.date}</div>
+                    <div style="display:flex; gap:8px;">
+                        <span>${formatCurrency(inv.total)}</span>
+                        <button class="small download-pdf" data-id="${inv.id}">📥</button>
+                        <button class="small danger delete-inv" data-id="${inv.id}">🗑️</button>
+                    </div>
+                </div>`;
+            });
+            invoiceLogDiv.innerHTML = html;
+            document.querySelectorAll('.download-pdf').forEach(b => b.addEventListener('click', (e) => downloadInvoicePDF(b.dataset.id)));
+            document.querySelectorAll('.delete-inv').forEach(b => b.addEventListener('click', (e) => {
+                if (confirm('Delete invoice?')) {
+                    invoices = invoices.filter(i => i.id !== b.dataset.id);
+                    buyers.forEach(b => b.totalTurnover = invoices.filter(inv => inv.buyerId === b.id).reduce((s,i) => s + i.total, 0));
+                    saveData();
+                    updateDashboard();
+                    renderBuyerList();
+                }
+            }));
+        }
+
+        // ---------- Bill Items ----------
+        function addBillItem() {
+            const name = productName.value.trim();
+            const qty = parseFloat(quantity.value);
+            const pr = parseFloat(price.value);
+            if (!name || qty <= 0 || isNaN(pr) || pr < 0) {
+                return showNotification('Enter valid product details', true);
+            }
+            currentBillItems.push({ name, qty, price: pr, total: qty * pr });
+            renderBillItems();
+            productName.value = ''; quantity.value = '1'; price.value = '';
+        }
+        function renderBillItems() {
+            let subtotal = 0;
+            let html = '';
+            currentBillItems.forEach((item, idx) => {
+                subtotal += item.total;
+                html += `<div class="item-row">
+                    <span>${item.name}</span><span>${item.qty}</span><span>${formatCurrency(item.price)}</span><span>${formatCurrency(item.total)}</span>
+                    <button class="small" onclick="removeBillItem(${idx})">❌</button>
+                </div>`;
+            });
+            billItemsContainer.innerHTML = html || '<div class="empty-state">No items</div>';
+            const discount = parseFloat(discountAmountInput.value) || 0;
+            const taxRate = parseFloat(taxRateInput.value) || 0;
+            const afterDiscount = subtotal - discount;
+            const tax = afterDiscount * taxRate / 100;
+            const total = afterDiscount + tax;
+            grandTotalDisplay.textContent = formatCurrency(total);
+        }
+        window.removeBillItem = (idx) => {
+            currentBillItems.splice(idx,1);
+            renderBillItems();
+        };
+
+        // ---------- Invoice Creation ----------
+        function getSelectedBuyerName() {
+            const buyerId = invoiceBuyerSelect.value;
+            if (!buyerId) return null;
+            const buyer = buyers.find(b => b.id === buyerId);
+            return buyer ? buyer.name : null;
+        }
+        function buildInvoiceObject() {
+            const buyerName = getSelectedBuyerName();
+            if (!buyerName) { showNotification('Please select a buyer', true); return null; }
+            const buyerId = invoiceBuyerSelect.value;
+            if (currentBillItems.length === 0) { showNotification('Add at least one item', true); return null; }
+            const subtotal = currentBillItems.reduce((s,i)=>s+i.total,0);
+            const discount = parseFloat(discountAmountInput.value)||0;
+            const taxRate = parseFloat(taxRateInput.value)||0;
+            const tax = (subtotal - discount) * taxRate / 100;
+            const total = subtotal - discount + tax;
+            const invNum = 'INV-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.floor(Math.random()*1000);
+            return {
+                id: generateId(),
+                buyerId,
+                buyerName,
+                date: new Date().toISOString().slice(0,10),
+                invoiceNumber: invNum,
+                items: currentBillItems.map(i => ({desc: i.name, qty: i.qty, rate: i.price})),
+                subtotal, discount, tax, total,
+            };
+        }
+        function saveInvoiceToStorage() {
+            const inv = buildInvoiceObject();
+            if (!inv) return;
+            invoices.push(inv);
+            const buyer = buyers.find(b => b.id === inv.buyerId);
+            if (buyer) buyer.totalTurnover += inv.total;
+            saveData();
+            updateDashboard();
+            renderBuyerList();
+            showNotification('Invoice saved');
+            clearBillForm();
+            switchTab('dashboard');
+        }
+        function clearBillForm() {
+            currentBillItems = [];
+            renderBillItems();
+            discountAmountInput.value = ''; taxRateInput.value = '0';
+            invoiceBuyerSelect.value = selectedBuyerId || '';
+        }
+
+        // PDF Generation
+        function downloadInvoicePDF(invoiceId) {
+            let inv;
+            if (invoiceId) {
+                inv = invoices.find(i => i.id === invoiceId);
+            } else {
+                inv = buildInvoiceObject();
+                if (!inv) return;
+                // temporary add to invoices for PDF
+                invoices.push(inv);
+                saveData();
+            }
+            if (!inv) return;
+            pdfCustName.textContent = inv.buyerName;
+            pdfDate.textContent = inv.date;
+            pdfInvNo.textContent = inv.invoiceNumber.slice(-6);
+            let itemsHtml = '<tr><th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>';
+            inv.items.forEach(it => itemsHtml += `<tr><td>${it.desc}</td><td>${it.qty}</td><td>${currencySymbol}${it.rate}</td><td>${currencySymbol}${it.qty*it.rate}</td></tr>`);
+            pdfItemsTable.innerHTML = itemsHtml;
+            pdfTotal.textContent = `${currencySymbol} ${inv.total.toFixed(2)}`;
+            
+            const element = document.getElementById('pdfPreview');
+            html2canvas(element, { scale: 2 }).then(canvas => {
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 210;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                pdf.save(`Invoice_${inv.invoiceNumber}.pdf`);
+                showNotification('PDF downloaded');
+            }).catch(() => {
+                const pdf = new jsPDF();
+                pdf.text(`Paul Brothers Invoice`, 20, 20);
+                pdf.text(`Customer: ${inv.buyerName}`, 20, 30);
+                pdf.text(`Total: ${currencySymbol} ${inv.total}`, 20, 40);
+                pdf.save(`Invoice_${inv.invoiceNumber}.pdf`);
+            });
+        }
+
+        // ---------- Event Listeners ----------
+        addBuyerBtn.addEventListener('click', addBuyer);
+        clearSelectedBtn.addEventListener('click', clearSelected);
+        toggleInvoiceLogBtn.addEventListener('click', () => {
+            recentPanel.style.display = recentPanel.style.display === 'none' ? 'block' : 'none';
+            toggleInvoiceLogBtn.textContent = recentPanel.style.display === 'none' ? '▼ Show' : '▲ Hide';
+        });
+        addProductBtn.addEventListener('click', addBillItem);
+        currencySelect.addEventListener('change', () => { currencySymbol = currencySelect.value; renderBillItems(); });
+        discountAmountInput.addEventListener('input', renderBillItems);
+        taxRateInput.addEventListener('input', renderBillItems);
+        saveInvoiceBtn.addEventListener('click', saveInvoiceToStorage);
+        downloadPDFBtn.addEventListener('click', () => downloadInvoicePDF(null));
+        clearBillBtn.addEventListener('click', clearBillForm);
+
+        // Initialize
+        loadData();
+        renderBuyerList();
+        updateDashboard();
+        deliveryDate.min = new Date().toISOString().split('T')[0];
+        recentPanel.style.display = 'block';
+    })();
+</script>
+</body>
+</html>
