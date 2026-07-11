@@ -229,7 +229,7 @@
     }
 
     function switchTab(tabId) {
-        tabs.forEach(t => t.classList.remove('active'));
+     function   tabs.forEach(t => t.classList.remove('active'));
         document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
         Object.values(panels).forEach(p => p.classList.remove('active'));
         panels[tabId].classList.add('active');
@@ -239,17 +239,15 @@
         if (tabId === 'invoice') { populateBuyerDropdown(); populateProductDropdown(); renderQuickProducts(); $('displayInvoiceDate').textContent = new Date().toLocaleDateString('en-IN'); }
     }
     tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
-
-    function load() {
-        buyers = JSON.parse(localStorage.getItem('pb_v9_b')) || [];
-        products = JSON.parse(localStorage.getItem('pb_v9_p')) || [];
-        invoices = JSON.parse(localStorage.getItem('pb_v9_i')) || [];
-        buyers.forEach(b => b.totalTurnover = invoices.filter(inv => inv.buyerId === b.id).reduce((s,i) => s + (i.billTotal || i.total || 0), 0));
-    }
-    function save() { 
-        localStorage.setItem('pb_v9_b', JSON.stringify(buyers)); 
-        localStorage.setItem('pb_v9_p', JSON.stringify(products)); 
-        localStorage.setItem('pb_v9_i', JSON.stringify(invoices)); 
+    // ---------- Data management ----------//
+    function loadData() {
+            buyers = JSON.parse(localStorage.getItem(STORAGE_BUYERS)) || [];
+            invoices = JSON.parse(localStorage.getItem(STORAGE_INVOICES)) || [];
+            buyers.forEach(b => b.totalTurnover = invoices.filter(inv => inv.buyerId === b.id).reduce((s,i) => s + i.total, 0));
+        }
+    function saveData() {
+            localStorage.setItem(STORAGE_BUYERS, JSON.stringify(buyers));
+            localStorage.setItem(STORAGE_INVOICES, JSON.stringify(invoices));
     }
 
     function renderBuyerList() {
