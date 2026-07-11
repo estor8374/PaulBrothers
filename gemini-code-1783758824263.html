@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Paul Brothers · Business Suite</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { margin: 0; box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        body { background: linear-gradient(145deg, #f9fafc 0%, #eef2f6 100%); min-height: 100vh; padding: 16px 12px; display: flex; justify-content: center; align-items: flex-start; }
+        .app-wrapper { max-width: 1300px; width: 100%; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border-radius: 32px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15); padding: 24px 20px; border: 1px solid rgba(255,255,255,0.5); }
+        @media (min-width: 768px) { body { padding: 30px 20px; } .app-wrapper { padding: 32px 30px; border-radius: 40px; } }
+
+        .brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .brand-left h1 { font-weight: 700; font-size: 1.8rem; color: #0a1e2f; display: flex; align-items: center; gap: 10px; }
+        .brand-left h1 span { background: #1e3a5f; color: white; font-size: 0.9rem; padding: 4px 16px; border-radius: 60px; }
+        .tagline { color: #4b5e77; font-size: 0.9rem; padding-left: 8px; border-left: 4px solid #2d7a9b; }
+        .phone-badge { background: linear-gradient(135deg, #1e3a5f, #2d5a7b); color: white; padding: 8px 18px; border-radius: 40px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+
+        .tabs-nav { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e2eaf3; padding-bottom: 4px; overflow-x: auto; }
+        .tab-btn { background: transparent; border: none; padding: 12px 18px; font-weight: 600; font-size: 1rem; color: #4a6479; border-radius: 40px 40px 0 0; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: #1e3a5f; border-bottom-color: #1e3a5f; background: #f0f7ff; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .card { background: #ffffffdd; backdrop-filter: blur(4px); border-radius: 24px; padding: 20px 18px; box-shadow: 0 8px 20px rgba(0,0,0,0.02); border: 1px solid #ffffff; margin-bottom: 20px; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 8px; }
+        .card-header h2 { font-weight: 600; font-size: 1.3rem; color: #13294b; }
+        .badge { background: #d4e2f0; color: #1a405d; padding: 5px 14px; border-radius: 40px; font-weight: 500; font-size: 0.8rem; }
+
+        button { background: white; border: 1px solid #cfdde9; padding: 10px 16px; border-radius: 40px; font-weight: 500; color: #1e3a5f; cursor: pointer; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px; }
+        button.primary { background: #1e3a5f; border-color: #1e3a5f; color: white; }
+        button.success { background: #0d9488; border-color: #0d9488; color: white; }
+        button.danger { background: #fff0f0; border-color: #fcc; color: #b91c1c; }
+        button.download-btn { background: #dbeafe; border-color: #bfdbfe; color: #1e40af; }
+        button.delete-btn-red { background: #fee2e2; border-color: #fecaca; color: #dc2626; }
+        button.small { padding: 8px 14px; font-size: 0.8rem; }
+
+        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-bar input { flex: 1; padding: 12px 16px; border: 1.5px solid #dfe8f2; border-radius: 40px; font-size: 1rem; }
+
+        .buyer-list, .product-list { max-height: 350px; overflow-y: auto; margin: 8px 0 18px; border-radius: 20px; background: #fbfdff; }
+        .buyer-item, .product-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #eef3f9; cursor: pointer; }
+        .buyer-item.selected { background: #d9e9fa; border-left: 5px solid #1e5b9e; }
+        .buyer-info, .product-info { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .buyer-turnover, .product-price { background: #dff0f9; padding: 4px 12px; border-radius: 30px; font-weight: 600; color: #0b4b6b; font-size: 0.8rem; }
+        .delete-icon { background: transparent; border: none; color: #b91c1c; font-size: 1.2rem; padding: 4px 8px; cursor: pointer; opacity: 0.6; }
+        .delete-icon:hover { opacity: 1; background: #fee2e2; border-radius: 30px; }
+
+        .add-form { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+        .add-form input { flex: 1; padding: 12px 16px; border: 1.5px solid #dfe8f2; border-radius: 40px; }
+
+        .stat-row { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+        @media (min-width: 480px) { .stat-row { flex-direction: row; } }
+        .stat-card { background: #f3f9ff; border-radius: 22px; padding: 16px 20px; flex: 1; }
+        .stat-label { text-transform: uppercase; font-size: 0.7rem; color: #51718c; }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: #0a1e2f; }
+
+        .invoice-log { max-height: 300px; overflow-y: auto; }
+        .invoice-log-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 14px 8px; border-bottom: 1px solid #e2ebf3; gap: 10px; }
+        .due-badge { background: #fef3c7; color: #92400e; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        
+        .input-group { margin-bottom: 18px; }
+        label { font-weight: 500; color: #2c445e; display: block; margin-bottom: 6px; font-size: 0.9rem; }
+        select, input, textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #dfe8f2; border-radius: 16px; font-size: 1rem; background: white; }
+        
+        .items-panel { background: #fafdff; border-radius: 20px; padding: 20px; margin: 18px 0; border: 1px solid #e5edf5; }
+        .item-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; padding: 10px; background: white; border-radius: 12px; align-items: center; }
+        .item-row span { font-weight: 500; }
+        .item-total-cell { font-weight: 600; color: #0d9488; }
+
+        .invoice-summary { background: #f0f7ff; border-radius: 16px; padding: 20px; margin-top: 15px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 8px 0; color: #334155; }
+        .summary-row.previous-due { color: #f59e0b; font-weight: 600; border-top: 1px dashed #fde68a; padding-top: 12px; }
+        .summary-row.bill-total { font-weight: 700; font-size: 1.1rem; color: #1e3a5f; border-top: 2px solid #d4e2f0; padding-top: 12px; }
+        .summary-row.grand-total { font-weight: 700; font-size: 1.2rem; color: #0d9488; border-top: 2px solid #0d9488; padding-top: 12px; }
+
+        .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+        .footer-note { margin-top: 28px; color: #6b85a0; font-size: 0.8rem; display: flex; justify-content: space-between; border-top: 1px solid #d9e2ec; padding-top: 16px; }
+        .empty-state { text-align: center; padding: 30px; color: #7a95b0; }
+        .notification { position: fixed; top: 20px; right: 20px; padding: 15px 20px; background: #1e3a5f; color: white; border-radius: 8px; transform: translateX(150%); transition: transform 0.3s; z-index: 1000; }
+        .notification.show { transform: translateX(0); }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <div class="brand">
+        <div class="brand-left">
+            <h1>📋 Paul Brothers <span>ALL-IN-ONE</span></h1>
+            <div class="tagline">Invoice · Products · Search · PDF Download</div>
+        </div>
+        <div class="phone-badge"><span>📞</span> +91 9382658846</div>
+    </div>
+
+    <div class="tabs-nav">
+        <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab-btn" data-tab="buyers">👥 Buyers</button>
+        <button class="tab-btn" data-tab="products">📦 Products</button>
+        <button class="tab-btn" data-tab="invoice">🧾 New Invoice</button>
+    </div>
+
+    <div id="dashboardPanel" class="tab-panel active">
+        <div class="card">
+            <div class="card-header"><h2>Turnover Overview</h2><span class="badge" id="overallInvoiceCount">0</span></div>
+            <div class="stat-row">
+                <div class="stat-card"><div class="stat-label">Total turnover</div><div class="stat-value" id="totalTurnover">INR 0.00</div></div>
+                <div class="stat-card"><div class="stat-label">Selected buyer</div><div class="stat-value" id="selectedBuyerTurnover">—</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2>🔍 Search Invoices</h2></div>
+            <div class="search-bar">
+                <input type="text" id="invoiceSearchInput" placeholder="Search by invoice number or buyer name...">
+                <button id="clearSearchBtn" class="small">Clear</button>
+            </div>
+            <div id="searchResults"></div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2>Recent Invoices</h2><button id="toggleInvoiceLogBtn" class="small">▼ Show</button></div>
+            <div id="recentInvoicesPanel"><div class="invoice-log" id="invoiceLog"><div class="empty-state">No invoices yet</div></div></div>
+        </div>
+    </div>
+
+    <div id="buyersPanel" class="tab-panel">
+        <div class="card">
+            <div class="card-header"><h2>Buyer Directory</h2><span class="badge" id="buyerCount">0</span></div>
+            <div class="buyer-list" id="buyerListContainer"><div class="empty-state">➕ Add your first buyer</div></div>
+            <div class="add-form">
+                <input type="text" id="newBuyerName" placeholder="Buyer / company name">
+                <button id="addBuyerBtn" class="primary">➕ Add</button>
+            </div>
+            <button id="clearSelectedBuyerBtn" class="small" style="width:100%; margin-top:15px;">🗂️ Clear selection</button>
+        </div>
+    </div>
+
+    <div id="productsPanel" class="tab-panel">
+        <div class="card">
+            <div class="card-header"><h2>Product Catalog</h2><span class="badge" id="productCount">0</span></div>
+            <div class="product-list" id="productListContainer"><div class="empty-state">➕ Add your first product</div></div>
+            <div class="add-form">
+                <input type="text" id="newProductName" placeholder="Product name">
+                <input type="number" id="newProductPrice" placeholder="Price" step="0.01" style="width:120px;">
+                <button id="addProductBtn" class="primary">➕ Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="invoicePanel" class="tab-panel">
+        <div class="card" style="background: linear-gradient(135deg, #1e3a5f, #2d5a7b); color: white; margin-bottom: 20px;">
+            <h3>🧾 Create New Invoice</h3>
+            <p style="opacity:0.9;">Select buyer and add products to generate invoice</p>
+            <div style="display:flex; justify-content:space-between; margin-top:15px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.2);">
+                <span>📅 <span id="displayInvoiceDate"></span></span>
+                <span>📞 +91 9382658846</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="input-group"><label>👤 Select Buyer</label><select id="invoiceBuyerSelect"><option value="">-- Choose a buyer --</option></select></div>
+            <div style="background:#f0f7ff; border-radius:16px; padding:15px; margin-bottom:15px;">
+                <label>📦 Quick Add from Catalog</label>
+                <select id="productCatalogSelect"><option value="">-- Select a product --</option></select>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;" id="quickProductsContainer"></div>
+            </div>
+            <h3 style="margin-bottom:15px; color:#1e3a5f;">➕ Add Product</h3>
+            <div style="display:grid; grid-template-columns:1fr; gap:15px; margin-bottom:15px;">
+                <div class="input-group"><label>Product Name</label><input type="text" id="productName" placeholder="Item description"></div>
+                <div class="input-group"><label>Quantity</label><input type="number" id="quantity" min="1" value="1"></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr; gap:15px; margin-bottom:15px;">
+                <div class="input-group"><label>Price</label><div style="display:flex; gap:8px;"><input type="number" id="price" min="0" step="0.01" style="flex:1;" placeholder="0.00"></div></div>
+                <div class="input-group"><label>Delivery Date</label><input type="date" id="deliveryDate"></div>
+            </div>
+            <button id="addToBillBtn" class="success" style="width:100%; padding:14px;">➕ Add to Bill</button>
+            <div class="items-panel">
+                <h4 style="margin-bottom:15px; color:#1e3a5f;">📋 Bill Items</h4>
+                <div id="billItemsContainer"></div>
+            </div>
+            <div style="display:flex; gap:15px; margin:15px 0;">
+                <div style="flex:1;"><label>Discount (INR)</label><input type="number" id="discountAmount" placeholder="0.00" step="0.01"></div>
+                <div style="flex:1;"><label>Tax (%)</label><input type="number" id="taxRate" placeholder="0" step="0.01" value="0"></div>
+            </div>
+            <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:16px; padding:16px; margin:15px 0;">
+                <label style="color:#92400e;">💰 Previous Due</label>
+                <input type="number" id="previousDue" placeholder="0.00" step="0.01">
+            </div>
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:16px; padding:16px; margin:15px 0;">
+                <label style="color:#166534;">💬 Custom Message</label>
+                <textarea id="invoiceMessage" placeholder="Terms and conditions..." rows="2"></textarea>
+            </div>
+            <div class="invoice-summary">
+                <div class="summary-row"><span>Subtotal</span> <span id="subtotalDisplay">INR 0.00</span></div>
+                <div class="summary-row"><span>Discount</span> <span id="discountDisplay">-INR 0.00</span></div>
+                <div class="summary-row"><span>Tax</span> <span id="taxDisplay">INR 0.00</span></div>
+                <div class="summary-row bill-total"><span>📊 Bill Total</span> <span id="billTotalDisplay">INR 0.00</span></div>
+                <div class="summary-row previous-due"><span>💰 Previous Due</span> <span id="previousDueDisplay">INR 0.00</span></div>
+                <div class="summary-row grand-total"><span>🧾 Grand Total</span> <span id="grandTotalDisplay">INR 0.00</span></div>
+            </div>
+            <div class="actions">
+                <button id="saveInvoiceBtn" class="primary" style="flex:2; padding:16px;">💾 Save Invoice</button>
+                <button id="downloadPDFBtn" class="download-btn" style="flex:1; padding:16px;">📄 PDF</button>
+                <button id="clearBillBtn" style="flex:1;">🗑️ Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note"><span>Paul Brothers · +91 9382658846</span><span>⚡ v9.1 · Clean Compact ID</span></div>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<script>
+(function(){
+    const { jsPDF } = window.jspdf;
+    let buyers = [], products = [], invoices = [], selectedBuyerId = null, currentBillItems = [];
+
+    const $ = (id) => document.getElementById(id);
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panels = { dashboard: $('dashboardPanel'), buyers: $('buyersPanel'), products: $('productsPanel'), invoice: $('invoicePanel') };
+
+    function generateId() { return Date.now() + '-' + Math.random().toString(36).substr(2,9); }
+    // লেন্থ ছোট এবং ৪ সংখ্যার ইউনিক কোড জেনারেটর
+    function generateShortInvoiceNumber() { return 'INV-' + Math.floor(1000 + Math.random() * 9000); }
+    
+    function fmt(amt) { return 'INR ' + amt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+    function notify(msg, err) {
+        const n = $('notification'); n.textContent = msg; n.style.background = err ? '#b91c1c' : '#1e3a5f';
+        n.classList.add('show'); setTimeout(() => n.classList.remove('show'), 3000);
+    }
+
+    function switchTab(tabId) {
+        tabs.forEach(t => t.classList.remove('active'));
+        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+        Object.values(panels).forEach(p => p.classList.remove('active'));
+        panels[tabId].classList.add('active');
+        if (tabId === 'dashboard') updateDashboard();
+        if (tabId === 'buyers') renderBuyerList();
+        if (tabId === 'products') renderProductList();
+        if (tabId === 'invoice') { populateBuyerDropdown(); populateProductDropdown(); renderQuickProducts(); $('displayInvoiceDate').textContent = new Date().toLocaleDateString('en-IN'); }
+    }
+    tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+    function load() {
+        buyers = JSON.parse(localStorage.getItem('pb_v9_b')) || [];
+        products = JSON.parse(localStorage.getItem('pb_v9_p')) || [];
+        invoices = JSON.parse(localStorage.getItem('pb_v9_i')) || [];
+        buyers.forEach(b => b.totalTurnover = invoices.filter(inv => inv.buyerId === b.id).reduce((s,i) => s + (i.billTotal || i.total || 0), 0));
+    }
+    function save() { 
+        localStorage.setItem('pb_v9_b', JSON.stringify(buyers)); 
+        localStorage.setItem('pb_v9_p', JSON.stringify(products)); 
+        localStorage.setItem('pb_v9_i', JSON.stringify(invoices)); 
+    }
+
+    function renderBuyerList() {
+        const div = $('buyerListContainer'), cnt = $('buyerCount');
+        if (!buyers.length) { div.innerHTML = '<div class="empty-state">➕ Add your first buyer</div>'; cnt.textContent = '0'; }
+        else {
+            let h = ''; buyers.forEach(b => { h += `<div class="buyer-item ${selectedBuyerId===b.id?'selected':''}" data-id="${b.id}"><div class="buyer-info">🏢 ${b.name} <span class="buyer-turnover">${fmt(b.totalTurnover||0)}</span></div><button class="delete-icon" data-del="${b.id}">🗑️</button></div>`; });
+            div.innerHTML = h; cnt.textContent = buyers.length;
+            div.querySelectorAll('.buyer-item').forEach(el => el.addEventListener('click', (e) => { if (e.target.closest('.delete-icon')) return; selectedBuyerId = el.dataset.id; renderBuyerList(); updateDashboard(); populateBuyerDropdown(); }));
+            div.querySelectorAll('.delete-icon').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); if (confirm('Delete buyer?')) { buyers = buyers.filter(x => x.id !== b.dataset.del); if (selectedBuyerId === b.dataset.del) selectedBuyerId = null; save(); renderBuyerList(); updateDashboard(); } }));
+        }
+        populateBuyerDropdown();
+    }
+    function populateBuyerDropdown() { const s = $('invoiceBuyerSelect'); s.innerHTML = '<option value="">-- Choose a buyer --</option>'; buyers.forEach(b => { const o = document.createElement('option'); o.value = b.id; o.textContent = b.name; if (selectedBuyerId === b.id) o.selected = true; s.appendChild(o); }); }
+
+    function renderProductList() {
+        const div = $('productListContainer'), cnt = $('productCount');
+        if (!products.length) { div.innerHTML = '<div class="empty-state">➕ Add your first product</div>'; cnt.textContent = '0'; }
+        else { let h = ''; products.forEach(p => { h += `<div class="product-item"><span>📦 ${p.name}</span> <span class="product-price">${fmt(p.price)}</span><button class="delete-icon" data-del="${p.id}">🗑️</button></div>`; }); div.innerHTML = h; cnt.textContent = products.length; div.querySelectorAll('.delete-icon').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); if (confirm('Delete product?')) { products = products.filter(x => x.id !== b.dataset.del); save(); renderProductList(); } })); }
+        populateProductDropdown(); renderQuickProducts();
+    }
+    function populateProductDropdown() { const s = $('productCatalogSelect'); s.innerHTML = '<option value="">-- Select a product --</option>'; products.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = `${p.name} - ${fmt(p.price)}`; s.appendChild(o); }); }
+    function renderQuickProducts() { const div = $('quickProductsContainer'); if (!products.length) { div.innerHTML = '<span style="color:#94a3b8;">No products</span>'; return; } div.innerHTML = products.slice(0,8).map(p => `<button style="background:white; border:1px solid #d4e2f0; padding:8px 16px; border-radius:30px; cursor:pointer;" data-pid="${p.id}">${p.name} (${fmt(p.price)})</button>`).join(''); div.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { const p = products.find(x => x.id === b.dataset.pid); if (p) { $('productName').value = p.name; $('price').value = p.price; $('quantity').value = '1'; $('quantity').focus(); } })); }
+
+    function updateDashboard() {
+        $('totalTurnover').textContent = fmt(invoices.reduce((s,i) => s + (i.billTotal || i.total || 0), 0));
+        $('overallInvoiceCount').textContent = `${invoices.length} invoice${invoices.length!==1?'s':''}`;
+        $('selectedBuyerTurnover').textContent = selectedBuyerId ? fmt((buyers.find(b => b.id === selectedBuyerId) || {}).totalTurnover || 0) : '—';
+        renderInvoiceLog();
+    }
+
+    function renderInvoiceLog() {
+        const div = $('invoiceLog');
+        if (!invoices.length) { div.innerHTML = '<div class="empty-state">No invoices yet</div>'; return; }
+        const sorted = [...invoices].sort((a,b) => (a.date < b.date ? 1 : -1));
+        div.innerHTML = sorted.slice(0,10).map(inv => {
+            const due = inv.previousDue > 0 ? `<span class="due-badge">Due: ${fmt(inv.previousDue)}</span>` : '';
+            return `<div class="invoice-log-item">
+                <div><strong>${inv.invoiceNumber}</strong> · ${inv.buyerName} · ${inv.date} ${due}</div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span>${fmt(inv.billTotal || inv.total)}</span>
+                    <button class="small download-btn inv-dl" data-id="${inv.id}">📥 PDF</button>
+                    <button class="small delete-btn-red inv-del" data-id="${inv.id}">🗑️</button>
+                </div>
+            </div>`;
+        }).join('');
+        div.querySelectorAll('.inv-dl').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); downloadInvoicePDF(b.dataset.id); }));
+        div.querySelectorAll('.inv-del').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); deleteInvoice(b.dataset.id); }));
+    }
+
+    function deleteInvoice(id) {
+        if (!confirm('Delete this invoice?')) return;
+        invoices = invoices.filter(i => i.id !== id);
+        buyers.forEach(b => b.totalTurnover = invoices.filter(inv => inv.buyerId === b.id).reduce((s,i) => s + (i.billTotal || i.total || 0), 0));
+        save(); updateDashboard(); renderBuyerList();
+        if ($('searchResults').innerHTML) performSearch();
+        notify('Invoice deleted');
+    }
+
+    function performSearch() {
+        const q = $('invoiceSearchInput').value.trim().toLowerCase();
+        const div = $('searchResults');
+        if (!q) { div.innerHTML = ''; return; }
+        const results = invoices.filter(inv => inv.invoiceNumber.toLowerCase().includes(q) || inv.buyerName.toLowerCase().includes(q));
+        if (!results.length) { div.innerHTML = '<div class="empty-state" style="padding:15px;">No invoices found</div>'; return; }
+        div.innerHTML = results.map(inv => {
+            const due = inv.previousDue > 0 ? `<span class="due-badge">Due: ${fmt(inv.previousDue)}</span>` : '';
+            return `<div class="invoice-log-item">
+                <div><strong>${inv.invoiceNumber}</strong> · ${inv.buyerName} · ${inv.date} ${due}</div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span>${fmt(inv.billTotal || inv.total)}</span>
+                    <button class="small download-btn srch-dl" data-id="${inv.id}">📥 PDF</button>
+                    <button class="small delete-btn-red srch-del" data-id="${inv.id}">🗑️</button>
+                </div>
+            </div>`;
+        }).join('');
+        div.querySelectorAll('.srch-dl').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); downloadInvoicePDF(b.dataset.id); }));
+        div.querySelectorAll('.srch-del').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); deleteInvoice(b.dataset.id); performSearch(); }));
+    }
+
+    function addBillItem() {
+        const n = $('productName').value.trim(), q = parseFloat($('quantity').value), p = parseFloat($('price').value);
+        if (!n || q <= 0 || isNaN(p) || p < 0) return notify('Enter valid details', true);
+        currentBillItems.push({ name: n, qty: q, price: p, total: q * p });
+        renderBillItems(); $('productName').value = ''; $('quantity').value = '1'; $('price').value = '';
+    }
+
+    function renderBillItems() {
+        const div = $('billItemsContainer'); let sub = 0;
+        if (!currentBillItems.length) { div.innerHTML = '<div class="empty-state">No items added yet</div>'; }
+        else {
+            div.innerHTML = currentBillItems.map((it, idx) => {
+                sub += it.total;
+                return `<div class="item-row" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="flex:2;">${it.name}</span>
+                    <span style="flex:1;">Qty: ${it.qty}</span>
+                    <span style="flex:1;">${fmt(it.price)}</span>
+                    <span class="item-total-cell" style="flex:1;">${fmt(it.total)}</span>
+                    <button class="small danger" onclick="window._removeItem(${idx})" style="flex:0;">❌ Remove</button>
+                </div>`;
+            }).join('');
+        }
+        const disc = parseFloat($('discountAmount').value) || 0, taxR = parseFloat($('taxRate').value) || 0, prevDue = parseFloat($('previousDue').value) || 0;
+        const tax = (sub - disc) * taxR / 100, billTotal = sub - disc + tax, grandTotal = billTotal + prevDue;
+        $('subtotalDisplay').textContent = fmt(sub);
+        $('discountDisplay').textContent = '-' + fmt(disc);
+        $('taxDisplay').textContent = fmt(tax);
+        $('billTotalDisplay').textContent = fmt(billTotal);
+        $('previousDueDisplay').textContent = fmt(prevDue);
+        $('grandTotalDisplay').textContent = fmt(grandTotal);
+    }
+    window._removeItem = (idx) => { currentBillItems.splice(idx,1); renderBillItems(); };
+
+    function buildInvoice() {
+        const buyerId = $('invoiceBuyerSelect').value;
+        const buyer = buyers.find(b => b.id === buyerId);
+        if (!buyer) return notify('Select a buyer', true), null;
+        if (!currentBillItems.length) return notify('Add items', true), null;
+        const sub = currentBillItems.reduce((s,i)=>s+i.total,0), disc = parseFloat($('discountAmount').value)||0, taxR = parseFloat($('taxRate').value)||0;
+        const prevDue = parseFloat($('previousDue').value)||0, tax = (sub-disc)*taxR/100;
+        const billTotal = sub - disc + tax, grandTotal = billTotal + prevDue;
+        return { id: generateId(), buyerId, buyerName: buyer.name, date: new Date().toISOString().slice(0,10), invoiceNumber: generateShortInvoiceNumber(), items: currentBillItems.map(i=>({desc:i.name, qty:i.qty, rate:i.price})), subtotal:sub, discount:disc, tax, previousDue:prevDue, billTotal, total:grandTotal, message: $('invoiceMessage').value.trim() };
+    }
+
+    function saveInvoice() {
+        const inv = buildInvoice(); if (!inv) return;
+        invoices.push(inv); const buyer = buyers.find(b => b.id === inv.buyerId); if (buyer) buyer.totalTurnover += inv.billTotal;
+        save(); updateDashboard(); renderBuyerList(); notify('Invoice saved'); clearForm(); switchTab('dashboard');
+    }
+
+    function clearForm() { currentBillItems = []; renderBillItems(); $('discountAmount').value = ''; $('taxRate').value = '0'; $('previousDue').value = ''; $('invoiceMessage').value = ''; $('invoiceBuyerSelect').value = selectedBuyerId || ''; $('productCatalogSelect').value = ''; }
+
+    // RENDER SYSTEM: CLEAN PDF UI ENGINE
+    function downloadInvoicePDF(invoiceId) {
+        let inv;
+        if (invoiceId) inv = invoices.find(i => i.id === invoiceId);
+        else { inv = buildInvoice(); if (!inv) return; invoices.push(inv); save(); }
+        if (!inv) return notify('Invoice not found', true);
+
+        try {
+            const doc = new jsPDF();
+            
+            // Structured Aesthetic Header
+            doc.setFillColor(15, 32, 67); 
+            doc.rect(0, 0, 210, 38, 'F');
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(22);
+            doc.setTextColor(255, 255, 255);
+            doc.text('PAUL BROTHERS', 16, 16);
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(200, 220, 245);
+            doc.text('Commercial Suite Billing Engine', 16, 23);
+            doc.text('Contact Support: +91 9382658846', 16, 29);
+            
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(15);
+            doc.setTextColor(255, 255, 255);
+            doc.text('INVOICE RECEIPT', 194, 22, { align: 'right' });
+
+            // Document Details Panel
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(80, 90, 105);
+            doc.text('CUSTOMER / BILL TO:', 16, 49);
+            
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(10, 20, 40);
+            doc.text(inv.buyerName, 16, 56);
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(80, 90, 105);
+            doc.text('Invoice Number:', 135, 49);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(10, 20, 40);
+            doc.text(inv.invoiceNumber, 168, 49);
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(80, 90, 105);
+            doc.text('Issue Date:', 135, 56);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(10, 20, 40);
+            doc.text(inv.date, 168, 56);
+            
+            const gridData = inv.items.map(item => [
+                item.desc,
+                item.qty.toString(),
+                item.rate.toFixed(2),
+                (item.qty * item.rate).toFixed(2)
+            ]);
+            
+            doc.autoTable({
+                startY: 66,
+                head: [['Product / Item Description', 'Qty', 'Unit Price (INR)', 'Total Amount (INR)']],
+                body: gridData,
+                theme: 'striped',
+                headStyles: { fillColor: [15, 32, 67], textColor: 255, fontStyle: 'bold' },
+                columnStyles: {
+                    0: { halign: 'left' },
+                    1: { cellWidth: 20, halign: 'center' },
+                    2: { cellWidth: 38, halign: 'right' },
+                    3: { cellWidth: 38, halign: 'right' }
+                },
+                styles: { fontSize: 9.5, cellPadding: 4 },
+                margin: { left: 16, right: 16 }
+            });
+            
+            let verticalPointer = doc.previousAutoTable.finalY + 12;
+            
+            // Clean Align Summary Figures
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(80, 90, 105);
+            
+            doc.text('Subtotal:', 135, verticalPointer);
+            doc.text(inv.subtotal.toFixed(2) + ' INR', 194, verticalPointer, { align: 'right' });
+            
+            if (inv.discount > 0) { 
+                verticalPointer += 6; 
+                doc.text('Discount:', 135, verticalPointer);
+                doc.text('-' + inv.discount.toFixed(2) + ' INR', 194, verticalPointer, { align: 'right' }); 
+            }
+            if (inv.tax > 0) { 
+                verticalPointer += 6; 
+                doc.text('Tax Assessment:', 135, verticalPointer);
+                doc.text(inv.tax.toFixed(2) + ' INR', 194, verticalPointer, { align: 'right' }); 
+            }
+            
+            verticalPointer += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(10, 20, 40);
+            doc.text('Net Bill Total:', 135, verticalPointer);
+            doc.text(inv.billTotal.toFixed(2) + ' INR', 194, verticalPointer, { align: 'right' });
+            
+            if (inv.previousDue > 0) {
+                verticalPointer += 6;
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(180, 90, 0); 
+                doc.text('Previous Outstanding:', 135, verticalPointer);
+                doc.text(inv.previousDue.toFixed(2) + ' INR', 194, verticalPointer, { align: 'right' });
+            }
+            
+            // Separation Rule Line
+            verticalPointer += 4;
+            doc.setDrawColor(210, 220, 230);
+            doc.line(130, verticalPointer, 194, verticalPointer);
+            
+            verticalPointer += 6;
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(13, 148, 136); 
+            doc.text('Grand Total Pay:', 135, verticalPointer);
+            doc.text(inv.total.toFixed(2) + ' INR', 194, verticalPointer, { align: 'right' });
+            
+            // Remarks Block
+            if (inv.message) {
+                verticalPointer += 16;
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(80, 90, 105);
+                doc.text('Notes / Directions:', 16, verticalPointer);
+                
+                verticalPointer += 5;
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 110, 125);
+                doc.text(inv.message, 16, verticalPointer);
+            }
+            
+            // Footer Section
+            doc.setDrawColor(235, 240, 245);
+            doc.line(16, 276, 194, 276);
+            doc.setTextColor(150, 160, 175);
+            doc.setFontSize(8);
+            doc.text('Thank you for your valuable business partnership.', 16, 282);
+            doc.text('Automated Invoice Output', 194, 282, { align: 'right' });
+            
+            doc.save(`Invoice_${inv.invoiceNumber}.pdf`);
+            notify('PDF generated successfully!');
+        } catch (error) {
+            console.error('PDF Engine Failure:', error);
+            notify('Failed to print document layout safely.', true);
+        }
+    }
+
+    // App Event Matrix Wiring
+    $('addBuyerBtn').addEventListener('click', () => { const n = $('newBuyerName').value.trim(); if (!n) return notify('Enter name', true); buyers.push({ id: generateId(), name: n, totalTurnover: 0 }); save(); renderBuyerList(); $('newBuyerName').value = ''; notify('Buyer added'); });
+    $('clearSelectedBuyerBtn').addEventListener('click', () => { selectedBuyerId = null; renderBuyerList(); updateDashboard(); populateBuyerDropdown(); });
+    $('addProductBtn').addEventListener('click', () => { const n = $('newProductName').value.trim(), p = parseFloat($('newProductPrice').value); if (!n || isNaN(p) || p < 0) return notify('Invalid product', true); products.push({ id: generateId(), name: n, price: p }); save(); renderProductList(); $('newProductName').value = ''; $('newProductPrice').value = ''; notify('Product added'); });
+    $('toggleInvoiceLogBtn').addEventListener('click', () => { const p = $('recentInvoicesPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; $('toggleInvoiceLogBtn').textContent = p.style.display === 'none' ? '▼ Show' : '▲ Hide'; });
+    $('invoiceSearchInput').addEventListener('input', performSearch);
+    $('clearSearchBtn').addEventListener('click', () => { $('invoiceSearchInput').value = ''; $('searchResults').innerHTML = ''; });
+    $('productCatalogSelect').addEventListener('change', () => { const p = products.find(x => x.id === $('productCatalogSelect').value); if (p) { $('productName').value = p.name; $('price').value = p.price; $('quantity').value = '1'; $('quantity').focus(); } });
+    $('addToBillBtn').addEventListener('click', addBillItem);
+    ['discountAmount','taxRate','previousDue'].forEach(id => $(id).addEventListener('input', renderBillItems));
+    $('saveInvoiceBtn').addEventListener('click', saveInvoice);
+    $('downloadPDFBtn').addEventListener('click', () => downloadInvoicePDF(null));
+    $('clearBillBtn').addEventListener('click', clearForm);
+
+    load(); renderBuyerList(); renderProductList(); updateDashboard();
+    $('deliveryDate').min = new Date().toISOString().split('T')[0];
+    $('displayInvoiceDate').textContent = new Date().toLocaleDateString('en-IN');
+    $('recentInvoicesPanel').style.display = 'block';
+})();
+</script>
+</body>
+</html>
