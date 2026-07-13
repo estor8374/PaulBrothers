@@ -240,15 +240,25 @@
     }
     tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
     // ---------- Data management ----------//
-    function loadData() {
-            buyers = JSON.parse(localStorage.getItem(STORAGE_BUYERS)) || [];
-            invoices = JSON.parse(localStorage.getItem(STORAGE_INVOICES)) || [];
-            buyers.forEach(b => b.totalTurnover = invoices.filter(inv => inv.buyerId === b.id).reduce((s,i) => s + i.total, 0));
+// Initialize
+        loadData();
+        
+        // URL বা LocalStorage থেকে আগের সিলেক্ট করা buyerId পুনরুদ্ধার করার জন্য (যদি প্রয়োজন হয়)
+        // অথবা আপনি যদি চান লাস্ট সিলেক্টেড বায়ারের ডাটা দেখাবে:
+        if(buyers.length > 0 && !selectedBuyerId) {
+            // ইচ্ছে হলে প্রথম বায়ার বা আগের কোনো ডাটা ডিফল্ট সিলেক্ট করে রাখতে পারেন
+            // selectedBuyerId = buyers[0].id; 
         }
-    function saveData() {
-            localStorage.setItem(STORAGE_BUYERS, JSON.stringify(buyers));
-            localStorage.setItem(STORAGE_INVOICES, JSON.stringify(invoices));
-    }
+
+        renderBuyerList();
+        updateDashboard();
+        
+        // ইনভয়েস প্যানেলের বায়ার ড্রপডাউন আপডেট করা
+        populateBuyerDropdown(); 
+        
+        deliveryDate.min = new Date().toISOString().split('T')[0];
+        displayInvoiceDate.textContent = new Date().toLocaleDateString('en-IN');
+        recentPanel.style.display = 'block';3
 
     function renderBuyerList() {
         const div = $('buyerListContainer'), cnt = $('buyerCount');
